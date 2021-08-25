@@ -84,7 +84,7 @@ public void OnPluginStart() {
 	if ((g_Offset_m_aPlayerStats = gameconf.GetOffset("m_aPlayerStats")) == -1) {
 		SetFailState("Failed to get offset of \"m_aPlayerStats\".");
 	} else if ((g_Offset_m_aPlayerStats_Stride = gameconf.GetOffset("m_aPlayerStats_Stride")) == -1) {
-		SetFailState("Failed to get offset of \"statsCurrentLife\".");
+		SetFailState("Failed to get offset of \"m_aPlayerStats_Stride\".");
 	} else if ((g_Offset_statsCurrentLife = gameconf.GetOffset("statsCurrentLife")) == -1) {
 		SetFailState("Failed to get offset of \"statsCurrentLife\".");
 	} else if ((g_Offset_statsCurrentRound = gameconf.GetOffset("statsCurrentRound")) == -1) {
