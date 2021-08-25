@@ -17,7 +17,6 @@
  */
 
 #include <sourcemod>
-#include <sdktools>
 #include <tf2c-gamestats>
 
 #pragma semicolon 1
