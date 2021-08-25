@@ -21,17 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 #define _tf2c_gamestats_included
 
-public SharedPlugin __pl_tf2c_gamestats =
-{
-	name = "tf2c-gamestats",
-	file = "tf2c-gamestats.smx",
-#if defined REQUIRE_PLUGIN
-	required = 1,
-#else
-	required = 0,
-#endif
-};
-
 enum TF2_StatType {
 	TF2Stat_ShotsHit           = 1,
 	TF2Stat_ShotsFired         = 2,
@@ -69,6 +58,17 @@ enum TF2_StatScope {
 };
 
 native void TF2_GetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat);
+
+public SharedPlugin __pl_tf2c_gamestats =
+{
+	name = "tf2c-gamestats",
+	file = "tf2c-gamestats.smx",
+#if defined REQUIRE_PLUGIN
+	required = 1,
+#else
+	required = 0,
+#endif
+};
 
 #if !defined REQUIRE_PLUGIN
 public void __pl_tf2c_gamestats_SetNTVOptional()
