@@ -26,7 +26,7 @@ public Plugin myinfo = {
 	name = "TF2C GameStats",
 	author = "Ian",
 	description = "API for interacting with GameStats in Team Fortress 2 Classic.",
-	version = "1.0.0",
+	version = "1.1.0",
 	url = "https://github.com/IanE9/tf2c-gamestats"
 };
 
@@ -35,6 +35,7 @@ int g_Offset_m_aPlayerStats_Stride;
 int g_Offset_statsCurrentLife;
 int g_Offset_statsCurrentRound;
 int g_Offset_statsAccumulated;
+int g_Offset_iStatsChangedBits;
 Address g_Address_CTF_GameStats;
 
 Address GetClientStatAddress(int client, TF2_StatScope scope, TF2_StatType stat) {
@@ -54,24 +55,76 @@ Address GetClientStatAddress(int client, TF2_StatScope scope, TF2_StatType stat)
 		 + view_as<Address>(view_as<int>(stat) * 4);
 }
 
-any Native_GetClientGameStat(Handle plugin, int numParams) {
-	int client = GetNativeCell(1);
-	if (client < 0 || client > MaxClients) {
+Address GetClientStatsChangedBitsAddress(int client) {
+	return g_Address_CTF_GameStats
+		 + view_as<Address>(g_Offset_m_aPlayerStats)
+		 + view_as<Address>(client * g_Offset_m_aPlayerStats_Stride)
+		 + view_as<Address>(g_Offset_iStatsChangedBits);
+}
+
+bool ShouldSendStat(TF2_StatType statType) {
+	switch(statType) {
+		case TF2Stat_ShotsHit:   return false;
+		case TF2Stat_ShotsFired: return false;
+		case TF2Stat_Suicides:   return false;
+		case TF2Stat_EnvDeaths:  return false;
+		default:                 return true;
+	}
+}
+
+void Native_VerifyStatClient(int client) {
+	if (client < 1 || client > MaxClients) {
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index (%d) specified", client);
 	}
+}
 
-	TF2_StatScope statScope = GetNativeCell(2);
+void Native_VerifyStatScope(TF2_StatScope statScope) {
 	if (statScope < TF2StatScope_CurrentLife || statScope > TF2StatScope_Accumulated) {
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid stat scope (%d) specified", statScope);
 	}
+}
 
-	TF2_StatType statType = GetNativeCell(3);
+void Native_VerifyStatType(TF2_StatType statType) {
 	if (statType < TF2Stat_First || statType > TF2Stat_Last) {
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid stat type (%d) specified", statType);
 	}
+}
+
+any Native_GetClientGameStat(Handle plugin, int numParams) {
+	int client = GetNativeCell(1);
+	Native_VerifyStatClient(client);
+
+	TF2_StatScope statScope = GetNativeCell(2);
+	Native_VerifyStatScope(statScope);
+
+	TF2_StatType statType = GetNativeCell(3);
+	Native_VerifyStatType(statType);
 
 	Address statAddr = GetClientStatAddress(client, statScope, statType);
 	return LoadFromAddress(statAddr, NumberType_Int32);
+}
+
+any Native_SetClientGameStat(Handle plugin, int numParams) {
+	int client = GetNativeCell(1);
+	Native_VerifyStatClient(client);
+
+	TF2_StatScope statScope = GetNativeCell(2);
+	Native_VerifyStatScope(statScope);
+
+	TF2_StatType statType = GetNativeCell(3);
+	Native_VerifyStatType(statType);
+
+	int value = GetNativeCell(4);
+
+	Address statAddr = GetClientStatAddress(client, statScope, statType);
+	StoreToAddress(statAddr, value, NumberType_Int32);
+	if (ShouldSendStat(statType)) {
+		Address statsChangedBitsAddr = GetClientStatsChangedBitsAddress(client);
+		int statsChangedBits = LoadFromAddress(statsChangedBitsAddr, NumberType_Int32);
+		int statBit = 1 << (view_as<int>(statType) - 1);
+		statsChangedBits |= statBit;
+		StoreToAddress(statsChangedBitsAddr, statsChangedBits, NumberType_Int32);
+	}
 }
 
 public void OnPluginStart() {
@@ -90,6 +143,8 @@ public void OnPluginStart() {
 		SetFailState("Failed to get offset of \"statsCurrentRound\".");
 	} else if ((g_Offset_statsAccumulated = gameconf.GetOffset("statsAccumulated")) == -1) {
 		SetFailState("Failed to get offset of \"statsAccumulated\".");
+	} else if ((g_Offset_iStatsChangedBits = gameconf.GetOffset("iStatsChangedBits")) == -1) {
+		SetFailState("Failed to get offset of \"iStatsChangedBits\".");
 	} else if ((g_Address_CTF_GameStats = gameconf.GetAddress("CTF_GameStats")) == Address_Null) {
 		SetFailState("Failed to get address of \"CTF_GameStats\".");
 	}
@@ -100,6 +155,7 @@ public void OnPluginStart() {
 public APLRes AskPluginLoad2(Handle self, bool late, char[] error, int max)
 {
 	CreateNative("TF2_GetClientGameStat", Native_GetClientGameStat);
+	CreateNative("TF2_SetClientGameStat", Native_SetClientGameStat);
 
 	RegPluginLibrary("tf2c-gamestats");
 	return APLRes_Success;

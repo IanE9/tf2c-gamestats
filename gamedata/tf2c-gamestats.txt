@@ -34,6 +34,12 @@
 				"linux"		"216"
 				"mac"		"216"
 			}
+			"iStatsChangedBits"
+			{
+				"windows"	"324"
+				"linux"		"324"
+				"mac"		"324"
+			}
 		}
 		
 		"Signatures"

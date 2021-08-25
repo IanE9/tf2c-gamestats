@@ -58,6 +58,7 @@ enum TF2_StatScope {
 };
 
 native void TF2_GetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat);
+native void TF2_SetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat, int value);
 
 public SharedPlugin __pl_tf2c_gamestats =
 {
@@ -74,5 +75,6 @@ public SharedPlugin __pl_tf2c_gamestats =
 public void __pl_tf2c_gamestats_SetNTVOptional()
 {
 	MarkNativeAsOptional("TF2_GetClientGameStat");
+	MarkNativeAsOptional("TF2_SetClientGameStat");
 }
 #endif
