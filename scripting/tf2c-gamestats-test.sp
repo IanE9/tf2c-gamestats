@@ -27,7 +27,7 @@ public Plugin myinfo = {
 	author = "Ian",
 	description = "Test for TF2C-GameStats.",
 	version = "1.0.0",
-	url = "https://github.com/IanE9"
+	url = "https://github.com/IanE9/tf2c-gamestats"
 };
 
 public void OnPluginStart() {

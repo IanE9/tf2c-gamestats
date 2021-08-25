@@ -28,7 +28,7 @@ public Plugin myinfo = {
 	author = "Ian",
 	description = "API for interacting with GameStats in Team Fortress 2 Classic.",
 	version = "1.0.0",
-	url = "https://github.com/IanE9"
+	url = "https://github.com/IanE9/tf2c-gamestats"
 };
 
 int g_Offset_m_aPlayerStats;
