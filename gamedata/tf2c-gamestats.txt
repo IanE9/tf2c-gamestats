@@ -1,0 +1,70 @@
+"Games"
+{
+	"tf2classic"
+	{
+		"Offsets"
+		{
+			"m_aPlayerStats"
+			{
+				"windows"	"136"
+				"linux"		"136"
+				"mac"		"136"
+			}
+			"m_aPlayerStats_Stride"
+			{
+				"windows"	"1124"
+				"linux"		"1124"
+				"mac"		"1124"
+			}
+			"statsCurrentLife"
+			{
+				"windows"	"0"
+				"linux"		"0"
+				"mac"		"0"
+			}
+			"statsCurrentRound"
+			{
+				"windows"	"108"
+				"linux"		"108"
+				"mac"		"108"
+			}
+			"statsAccumulated"
+			{
+				"windows"	"216"
+				"linux"		"216"
+				"mac"		"216"
+			}
+		}
+		
+		"Signatures"
+		{
+			"CTF_GameStats"
+			{
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x51\xA1\x2A\x2A\x2A\x2A\x53\x8B\xD9\x83\x78\x2A\x00\x0F"
+				"linux"		"\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\xA1\x2A\x2A\x2A\x2A\x8B\x7D\x08\x8B\x50"
+				"mac"		"\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\xA1\x2A\x2A\x2A\x2A\x8B\x7D\x08\x8B\x50"
+			}
+		}
+		
+		"Addresses"
+		{
+			"CTF_GameStats"
+			{
+				"signature"	"CTF_GameStats"
+				"windows"
+				{           
+					"read"	"36"
+				}
+				"linux"
+				{           
+					"read"	"51"
+				}
+				"mac"
+				{           
+					"read"	"51"
+				}
+			}
+		}
+	}
+}
