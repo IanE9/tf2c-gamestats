@@ -49,7 +49,7 @@ Address GetClientStatAddress(int client, TF2_StatScope scope, TF2_StatType stat)
 			scopeOffset = g_Offset_statsAccumulated;
 	}
 	return g_Address_CTF_GameStats
-	     + view_as<Address>(g_Offset_m_aPlayerStats)
+		 + view_as<Address>(g_Offset_m_aPlayerStats)
 		 + view_as<Address>(client * g_Offset_m_aPlayerStats_Stride)
 		 + view_as<Address>(scopeOffset)
 		 + view_as<Address>(view_as<int>(stat) * 4);
