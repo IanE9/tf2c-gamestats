@@ -55,10 +55,56 @@ enum TF2_StatScope {
 	TF2StatScope_CurrentLife  = 0,
 	TF2StatScope_CurrentRound = 1,
 	TF2StatScope_Accumulated  = 2,
+
+	TF2StatScope_First = TF2StatScope_CurrentLife,
+	TF2StatScope_Last = TF2StatScope_Accumulated,
 };
 
+/**
+ * Retrieves the value of a client's stat within a scope.
+ *
+ * @param client    Index of the client.
+ * @param scope     Scope to retrieve the stat under.
+ * @param stat      Stat to retrieve the value of.
+ * @return          Value of the stat.
+ * @error           Invalid client index, scope, or stat will result in an error.
+ */
 native int TF2_GetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat);
+
+/**
+ * Sets the value of a client's stat within a scope.
+ *
+ * @param client    Index of the client.
+ * @param scope     Scope to set the stat under.
+ * @param stat      Stat to set the value of.
+ * @param value     Value to assign the stats.
+ * @noreturn
+ * @error           Invalid client index, scope, or stat will result in an error.
+ */
 native void TF2_SetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat, int value);
+
+/**
+ * Adjusts the value of a client's stat within a scope.
+ *
+ * @param client    Index of the client.
+ * @param scope     Scope to adjust the stat under.
+ * @param stat      Stat to adjust the value of.
+ * @param delta     Adjustment to apply to the stat value.
+ * @noreturn
+ * @error           Invalid client index, scope, or stat will result in an error.
+ */
+native void TF2_AdjustClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat, int delta);
+
+/**
+ * Adjusts the value of a client's stat within all scopes.
+ *
+ * @param client    Index of the client.
+ * @param stat      Stat to adjust the value of.
+ * @param delta     Adjustment to apply to the stat value.
+ * @noreturn
+ * @error           Invalid client index or stat will result in an error.
+ */
+native void TF2_AdjustClientGameStatAll(int client, TF2_StatType stat, int delta);
 
 public SharedPlugin __pl_tf2c_gamestats =
 {
@@ -76,5 +122,7 @@ public void __pl_tf2c_gamestats_SetNTVOptional()
 {
 	MarkNativeAsOptional("TF2_GetClientGameStat");
 	MarkNativeAsOptional("TF2_SetClientGameStat");
+	MarkNativeAsOptional("TF2_AdjustClientGameStat");
+	MarkNativeAsOptional("TF2_AdjustClientGameStatAll");
 }
 #endif

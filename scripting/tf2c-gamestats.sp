@@ -26,7 +26,7 @@ public Plugin myinfo = {
 	name = "TF2C GameStats",
 	author = "Ian",
 	description = "API for interacting with GameStats in Team Fortress 2 Classic.",
-	version = "1.1.1",
+	version = "1.2.0",
 	url = "https://github.com/IanE9/tf2c-gamestats"
 };
 
@@ -72,6 +72,14 @@ bool ShouldSendStat(TF2_StatType statType) {
 	}
 }
 
+void SetClientStatChangedBit(int client, TF2_StatType statType) {
+	Address statsChangedBitsAddr = GetClientStatsChangedBitsAddress(client);
+	int statsChangedBits = LoadFromAddress(statsChangedBitsAddr, NumberType_Int32);
+	int statBit = 1 << (view_as<int>(statType) - 1);
+	statsChangedBits |= statBit;
+	StoreToAddress(statsChangedBitsAddr, statsChangedBits, NumberType_Int32);
+}
+
 void Native_VerifyStatClient(int client) {
 	if (client < 1 || client > MaxClients) {
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index (%d) specified", client);
@@ -79,7 +87,7 @@ void Native_VerifyStatClient(int client) {
 }
 
 void Native_VerifyStatScope(TF2_StatScope statScope) {
-	if (statScope < TF2StatScope_CurrentLife || statScope > TF2StatScope_Accumulated) {
+	if (statScope < TF2StatScope_First || statScope > TF2StatScope_Last) {
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid stat scope (%d) specified", statScope);
 	}
 }
@@ -118,12 +126,54 @@ any Native_SetClientGameStat(Handle plugin, int numParams) {
 
 	Address statAddr = GetClientStatAddress(client, statScope, statType);
 	StoreToAddress(statAddr, value, NumberType_Int32);
+
 	if (ShouldSendStat(statType)) {
-		Address statsChangedBitsAddr = GetClientStatsChangedBitsAddress(client);
-		int statsChangedBits = LoadFromAddress(statsChangedBitsAddr, NumberType_Int32);
-		int statBit = 1 << (view_as<int>(statType) - 1);
-		statsChangedBits |= statBit;
-		StoreToAddress(statsChangedBitsAddr, statsChangedBits, NumberType_Int32);
+		SetClientStatChangedBit(client, statType);
+	}
+}
+
+any Native_AdjustClientGameStat(Handle plugin, int numParams) {
+	int client = GetNativeCell(1);
+	Native_VerifyStatClient(client);
+
+	TF2_StatScope statScope = GetNativeCell(2);
+	Native_VerifyStatScope(statScope);
+
+	TF2_StatType statType = GetNativeCell(3);
+	Native_VerifyStatType(statType);
+
+	int delta = GetNativeCell(4);
+	if (delta != 0) {
+		Address statAddr = GetClientStatAddress(client, statScope, statType);
+		int statValue = LoadFromAddress(statAddr, NumberType_Int32);
+		statValue += delta;
+		StoreToAddress(statAddr, statValue, NumberType_Int32);
+
+		if (ShouldSendStat(statType)) {
+			SetClientStatChangedBit(client, statType);
+		}
+	}
+}
+
+any Native_AdjustClientGameStatAll(Handle plugin, int numParams) {
+	int client = GetNativeCell(1);
+	Native_VerifyStatClient(client);
+
+	TF2_StatType statType = GetNativeCell(2);
+	Native_VerifyStatType(statType);
+
+	int delta = GetNativeCell(3);
+	if (delta != 0) {
+		for (TF2_StatScope statScope = TF2StatScope_First; statScope <= TF2StatScope_Last; ++statScope) {
+			Address statAddr = GetClientStatAddress(client, statScope, statType);
+			int statValue = LoadFromAddress(statAddr, NumberType_Int32);
+			statValue += delta;
+			StoreToAddress(statAddr, statValue, NumberType_Int32);
+		}
+
+		if (ShouldSendStat(statType)) {
+			SetClientStatChangedBit(client, statType);
+		}
 	}
 }
 
@@ -156,6 +206,8 @@ public APLRes AskPluginLoad2(Handle self, bool late, char[] error, int max)
 {
 	CreateNative("TF2_GetClientGameStat", Native_GetClientGameStat);
 	CreateNative("TF2_SetClientGameStat", Native_SetClientGameStat);
+	CreateNative("TF2_AdjustClientGameStat", Native_AdjustClientGameStat);
+	CreateNative("TF2_AdjustClientGameStatAll", Native_AdjustClientGameStatAll);
 
 	RegPluginLibrary("tf2c-gamestats");
 	return APLRes_Success;
