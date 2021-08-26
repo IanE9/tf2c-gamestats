@@ -57,7 +57,7 @@ enum TF2_StatScope {
 	TF2StatScope_Accumulated  = 2,
 };
 
-native void TF2_GetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat);
+native int TF2_GetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat);
 native void TF2_SetClientGameStat(int client, TF2_StatScope scope, TF2_StatType stat, int value);
 
 public SharedPlugin __pl_tf2c_gamestats =

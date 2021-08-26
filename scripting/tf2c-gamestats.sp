@@ -26,7 +26,7 @@ public Plugin myinfo = {
 	name = "TF2C GameStats",
 	author = "Ian",
 	description = "API for interacting with GameStats in Team Fortress 2 Classic.",
-	version = "1.1.0",
+	version = "1.1.1",
 	url = "https://github.com/IanE9/tf2c-gamestats"
 };
 
