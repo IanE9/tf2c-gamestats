@@ -106,6 +106,16 @@ native void TF2_AdjustClientGameStat(int client, TF2_StatScope scope, TF2_StatTy
  */
 native void TF2_AdjustClientGameStatAll(int client, TF2_StatType stat, int delta);
 
+/**
+ * Called when a client's score is being calculated.
+ *
+ * @param client    Index of the client.
+ * @param scope     Scope for which the score is being calculated.
+ * @param score     Client's calculated score.
+ * @noreturn
+ */
+forward void TF2_OnCalcClientScore(int client, TF2_StatScope scope, int& score);
+
 public SharedPlugin __pl_tf2c_gamestats =
 {
 	name = "tf2c-gamestats",

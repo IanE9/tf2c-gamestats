@@ -17,6 +17,7 @@
  */
 
 #include <sourcemod>
+#include <dhooks>
 #include <tf2c-gamestats>
 
 #pragma semicolon 1
@@ -26,7 +27,7 @@ public Plugin myinfo = {
 	name = "TF2C GameStats",
 	author = "Ian",
 	description = "API for interacting with GameStats in Team Fortress 2 Classic.",
-	version = "1.2.0",
+	version = "1.3.0",
 	url = "https://github.com/IanE9/tf2c-gamestats"
 };
 
@@ -37,17 +38,20 @@ int g_Offset_statsCurrentRound;
 int g_Offset_statsAccumulated;
 int g_Offset_iStatsChangedBits;
 Address g_Address_CTF_GameStats;
+DynamicDetour g_Detour_CTFGameRules_CalcPlayerScore;
+GlobalForward g_Forward_OnCalcClientScore;
+
+int GetStatScopeOffset(TF2_StatScope scope) {
+	switch (scope) {
+		case TF2StatScope_CurrentLife:  return g_Offset_statsCurrentLife;
+		case TF2StatScope_CurrentRound: return g_Offset_statsCurrentRound;
+		case TF2StatScope_Accumulated:  return g_Offset_statsAccumulated;
+		default:                        return 0; // Should never happen!!
+	}
+}
 
 Address GetClientStatAddress(int client, TF2_StatScope scope, TF2_StatType stat) {
-	int scopeOffset;
-	switch (scope) {
-		case TF2StatScope_CurrentLife:
-			scopeOffset = g_Offset_statsCurrentLife;
-		case TF2StatScope_CurrentRound:
-			scopeOffset = g_Offset_statsCurrentRound;
-		case TF2StatScope_Accumulated:
-			scopeOffset = g_Offset_statsAccumulated;
-	}
+	int scopeOffset = GetStatScopeOffset(scope);
 	return g_Address_CTF_GameStats
 		 + view_as<Address>(g_Offset_m_aPlayerStats)
 		 + view_as<Address>(client * g_Offset_m_aPlayerStats_Stride)
@@ -177,6 +181,55 @@ any Native_AdjustClientGameStatAll(Handle plugin, int numParams) {
 	}
 }
 
+bool FindRoundStatsClientAndScope(int& client, TF2_StatScope& scope, Address roundStatsAddr) {
+	// Ensure that the address is within a valid range.
+	Address m_aPlayerStats_Begin = g_Address_CTF_GameStats + view_as<Address>(g_Offset_m_aPlayerStats);
+	if (roundStatsAddr < m_aPlayerStats_Begin) {
+		return false;
+	}
+	if (roundStatsAddr >= m_aPlayerStats_Begin + view_as<Address>(g_Offset_m_aPlayerStats_Stride * MaxClients)) {
+		return false;
+	}
+
+	int roundStatsAbsOffset = view_as<int>(roundStatsAddr) - view_as<int>(m_aPlayerStats_Begin);
+	client = roundStatsAbsOffset / g_Offset_m_aPlayerStats_Stride;
+
+	int scopeOffset = roundStatsAbsOffset - (client * g_Offset_m_aPlayerStats_Stride);
+
+	// TF2StatScope_Accumulated is used overwhelmingly frequently, so this loop is reversed for optimization.
+	for (TF2_StatScope checkScope = TF2StatScope_Last; checkScope >= TF2StatScope_First; --checkScope) {
+		if (GetStatScopeOffset(checkScope) == scopeOffset) {
+			scope = checkScope;
+			return true;
+		}
+	}
+
+	// Unknown scope, uh oh!
+	return false;
+}
+
+MRESReturn Detour_CTFGameRules_CalcPlayerScore(DHookReturn hReturn, DHookParam hParams)
+{
+	int client;
+	TF2_StatScope scope;
+	if (g_Forward_OnCalcClientScore.FunctionCount > 0 && FindRoundStatsClientAndScope(client, scope, hParams.Get(1))) {
+		int score = hReturn.Value;
+		Call_StartForward(g_Forward_OnCalcClientScore);
+		Call_PushCell(client);
+		Call_PushCell(scope);
+		Call_PushCellRef(score);
+		Call_Finish();
+		if (score < 0) {
+			// m_iTotalScore is 12 bits and unsigned, pretty dumb!
+			score = 0;
+		}
+		hReturn.Value = score;
+		return MRES_Override;
+	} else {
+		return MRES_Ignored;
+	}
+}
+
 public void OnPluginStart() {
 	GameData gameconf = LoadGameConfigFile("tf2c-gamestats");
 	if (!gameconf) {
@@ -197,6 +250,10 @@ public void OnPluginStart() {
 		SetFailState("Failed to get offset of \"iStatsChangedBits\".");
 	} else if ((g_Address_CTF_GameStats = gameconf.GetAddress("CTF_GameStats")) == Address_Null) {
 		SetFailState("Failed to get address of \"CTF_GameStats\".");
+	} else if ((g_Detour_CTFGameRules_CalcPlayerScore = DynamicDetour.FromConf(gameconf, "CTFGameRules::CalcPlayerScore")) == null) {
+		SetFailState("Failed to create detour for \"CTFGameRules::CalcPlayerScore\".");
+	} else if (!g_Detour_CTFGameRules_CalcPlayerScore.Enable(Hook_Post, Detour_CTFGameRules_CalcPlayerScore)) {
+		SetFailState("Failed to enable detour for \"CTFGameRules::CalcPlayerScore\".");
 	}
 
 	delete gameconf;
@@ -208,6 +265,8 @@ public APLRes AskPluginLoad2(Handle self, bool late, char[] error, int max)
 	CreateNative("TF2_SetClientGameStat", Native_SetClientGameStat);
 	CreateNative("TF2_AdjustClientGameStat", Native_AdjustClientGameStat);
 	CreateNative("TF2_AdjustClientGameStatAll", Native_AdjustClientGameStatAll);
+
+	g_Forward_OnCalcClientScore = new GlobalForward("TF2_OnCalcClientScore", ET_Ignore, Param_Cell, Param_Cell, Param_CellByRef);
 
 	RegPluginLibrary("tf2c-gamestats");
 	return APLRes_Success;

@@ -51,6 +51,13 @@
 				"linux"		"\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\xA1\x2A\x2A\x2A\x2A\x8B\x7D\x08\x8B\x50"
 				"mac"		"\x55\x89\xE5\x57\x56\x53\x83\xEC\x2C\xA1\x2A\x2A\x2A\x2A\x8B\x7D\x08\x8B\x50"
 			}
+			"CTFGameRules::CalcPlayerScore"
+			{
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x56\x57\x8B\x7D\x08\xB8\x2A\x2A\x2A\x2A\xF7"
+				"linux"		"\x55\x89\xE5\x57\x8B\x4D\x08\x56\xBE\x2A\x2A\x2A\x2A\x53"
+				"mac"		"\x55\x89\xE5\x57\x8B\x4D\x08\x56\xBE\x2A\x2A\x2A\x2A\x53"
+			}
 		}
 		
 		"Addresses"
@@ -69,6 +76,23 @@
 				"mac"
 				{           
 					"read"	"51"
+				}
+			}
+		}
+		
+		"Functions"
+		{
+			"CTFGameRules::CalcPlayerScore"
+			{
+				"signature"	"CTFGameRules::CalcPlayerScore"
+				"callconv"	"cdecl"
+				"return"	"int"
+				"arguments"
+				{
+					"pRoundStats"
+					{
+						"type"	"int"
+					}
 				}
 			}
 		}
